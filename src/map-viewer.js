@@ -202,8 +202,10 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
 
     let poolIndex = 0;
     const fragment = document.createDocumentFragment();
+    const MAX_VISIBLE_DOM_MARKERS = 400;
 
     for (let i = 0; i < rawMarkerStore.length; i++) {
+      if (poolIndex >= MAX_VISIBLE_DOM_MARKERS) break;
       const item = rawMarkerStore[i];
       if (markerVisibility[item.kind] === false) continue;
       if (item.pixelX < minX || item.pixelX > maxX || item.pixelY < minY || item.pixelY > maxY) continue;
@@ -262,7 +264,7 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     scale = Math.max(minimumScale, Math.min(scale * factor, 8));
     panX = x - imageX * scale;
     panY = y - imageY * scale;
-    applyTransform();
+    scheduleTransform();
   }
 
   function placePin(x, y) {
@@ -567,6 +569,26 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
       settingsButton.classList.remove("active");
     }
   });
+  const viewerSizeSelect = document.querySelector("#viewer-size");
+  if (viewerSizeSelect) {
+    const shell = document.querySelector(".shell");
+    const applySize = (size) => {
+      viewport.classList.remove("size-small", "size-medium", "size-large", "size-compact");
+      shell?.classList.remove("size-small", "size-medium", "size-large", "size-compact");
+      viewport.classList.add(`size-${size}`);
+      shell?.classList.add(`size-${size}`);
+      localStorage.setItem("sm-map-viewer-size", size);
+      requestAnimationFrame(fitMap);
+    };
+    const savedSize = localStorage.getItem("sm-map-viewer-size") || "large";
+    viewerSizeSelect.value = savedSize === "compact" ? "small" : savedSize;
+    applySize(viewerSizeSelect.value);
+
+    viewerSizeSelect.addEventListener("change", () => {
+      applySize(viewerSizeSelect.value);
+    });
+  }
+
   window.addEventListener("resize", fitMap);
 
   return { showMap, restoreLastMap, fitMap, suspendMap, resumeMap };
