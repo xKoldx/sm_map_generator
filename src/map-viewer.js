@@ -162,6 +162,37 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     else panY = Math.min(0, Math.max(viewport.clientHeight - displayedHeight, panY));
   }
 
+  const markerCanvas = document.querySelector("#map-marker-canvas");
+  const markerTooltip = document.querySelector("#marker-tooltip");
+  const canvasCtx = markerCanvas ? markerCanvas.getContext("2d") : null;
+  const iconImageCache = new Map();
+
+  function getCachedIconImage(src) {
+    if (iconImageCache.has(src)) return iconImageCache.get(src);
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      scheduleTransform();
+    };
+    iconImageCache.set(src, img);
+    return img;
+  }
+
+  function findMarkerAtScreenPos(screenX, screenY) {
+    const radius = 14;
+    for (let i = rawMarkerStore.length - 1; i >= 0; i--) {
+      const item = rawMarkerStore[i];
+      if (markerVisibility[item.kind] === false) continue;
+      const itemScreenX = panX + item.pixelX * scale;
+      const itemScreenY = panY + item.pixelY * scale;
+      const dist = Math.hypot(screenX - itemScreenX, screenY - itemScreenY);
+      if (dist <= radius) {
+        return { item, screenX: itemScreenX, screenY: itemScreenY };
+      }
+    }
+    return null;
+  }
+
   let rawMarkerStore = [];
   let markerElementPool = [];
 
@@ -190,11 +221,12 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
       pin.style.left = `${panX + pinnedPixel.x * scale}px`;
       pin.style.top = `${panY + pinnedPixel.y * scale}px`;
     }
+
     if (!rawMarkerStore.length || !imageWidth || !imageHeight) return;
 
-    const vpWidth = viewport.clientWidth || window.innerWidth || 1200;
-    const vpHeight = viewport.clientHeight || window.innerHeight || 800;
-    const margin = 100 / scale;
+    const vpWidth = viewport.clientWidth || 1200;
+    const vpHeight = viewport.clientHeight || 800;
+    const margin = 300 / scale;
     const minX = -panX / scale - margin;
     const maxX = (-panX + vpWidth) / scale + margin;
     const minY = -panY / scale - margin;
@@ -202,6 +234,9 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
 
     let poolIndex = 0;
     const fragment = document.createDocumentFragment();
+
+    const isZoomedOut = scale < 0.28;
+    viewport.classList.toggle("zoom-out", isZoomedOut);
 
     for (let i = 0; i < rawMarkerStore.length; i++) {
       const item = rawMarkerStore[i];
@@ -214,7 +249,7 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
       element.style.left = `${panX + item.pixelX * scale}px`;
       element.style.top = `${panY + item.pixelY * scale}px`;
       const categoryOrder = markerOrder.indexOf(item.kind) + 1;
-      element.style.zIndex = String(categoryOrder * 100000);
+      element.style.zIndex = String(categoryOrder * 1000);
 
       const iconImg = element.firstElementChild;
       if (element.dataset.iconSrc !== item.iconHref) {
@@ -315,7 +350,6 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     rawMarkerStore = [];
     hoveredLabelMarkers.clear();
     focusedLabelMarkers.clear();
-    markerLayer.classList.remove("marker-label-active");
     markerDetails.hidden = true;
 
     for (const marker of markers || []) {
@@ -354,6 +388,10 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     image.src = mapUrl;
     image.style.width = `${imageWidth}px`;
     image.style.height = `${imageHeight}px`;
+    stage.style.width = `${imageWidth}px`;
+    stage.style.height = `${imageHeight}px`;
+    markerLayer.style.width = `${imageWidth}px`;
+    markerLayer.style.height = `${imageHeight}px`;
     empty.hidden = true;
     viewport.hidden = false;
     download.hidden = false;

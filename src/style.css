@@ -350,10 +350,6 @@ button:disabled { cursor: wait; opacity: 0.55; transform: none; }
   pointer-events: none;
 }
 
-/* Marker z-order is contained inside this layer. Labels may outrank other
-   markers, but never the details card, settings panel, or map controls. */
-.map-marker-layer.marker-label-active { z-index: 2; }
-
 .map-marker {
   position: absolute;
   width: 24px;
@@ -363,6 +359,74 @@ button:disabled { cursor: wait; opacity: 0.55; transform: none; }
   border: 0;
   border-radius: 0;
   background: transparent;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.map-viewport.zoom-out .map-marker {
+  width: 24px;
+  height: 24px;
+}
+
+.map-viewport.zoom-out .map-marker img {
+  width: 24px;
+  height: 24px;
+  filter: none;
+}
+
+.map-viewport.zoom-out .map-marker span {
+  display: none;
+}
+
+.map-marker:hover,
+.map-marker:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  transform: translate(-50%, -50%) !important;
+  z-index: 99999999 !important;
+}
+
+.map-marker img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.8));
+  pointer-events: none;
+}
+
+/* Clean icon rendering without CSS borders or background overlays */
+.map-marker-corn img,
+.map-marker-beehive img {
+  border: none;
+  background: transparent;
+}
+
+.map-marker span {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 100000000 !important;
+  padding: 4px 8px;
+  border: 1px solid #7c622b;
+  border-radius: 5px;
+  background: rgba(10, 13, 12, 0.96);
+  color: #f0b638;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%);
+  transition: opacity 120ms ease, visibility 120ms ease;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(240, 182, 56, 0.2);
+}
+
+.map-marker:hover span,
+.map-marker:focus-visible span {
+  opacity: 1;
+  visibility: visible;
+}
   pointer-events: auto;
   transform: translate(-50%, -50%);
 }
@@ -525,6 +589,20 @@ button:disabled { cursor: wait; opacity: 0.55; transform: none; }
   width: 15px;
   height: 15px;
   accent-color: #d7a93b;
+}
+
+.heavy-badge {
+  color: #ff5252;
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.medium-badge {
+  color: #f79e38;
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-left: 4px;
 }
 
 .map-viewer.expanded {
