@@ -544,15 +544,18 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
   for (const input of markerToggles) {
     const kind = input.dataset.markerKind;
     input.checked = markerVisibility[kind];
-    input.addEventListener("change", () => {
+    const updateVisibility = () => {
       markerVisibility[kind] = input.checked;
       localStorage.setItem(`sm-map-show-${kind}`, String(input.checked));
       bringMarkerKindToFront(kind);
-      applyMarkerVisibility();
+      applyTransform();
       if (!input.checked && markerDetailsKind.textContent === MARKER_KIND_LABELS[kind]) {
         markerDetails.hidden = true;
       }
-    });
+    };
+    input.addEventListener("change", updateVisibility);
+    input.addEventListener("input", updateVisibility);
+    input.addEventListener("click", updateVisibility);
   }
   settingsButton.addEventListener("click", (event) => {
     event.stopPropagation();
