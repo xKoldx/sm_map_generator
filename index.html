@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Generate a Scrap Mechanic Chapter 2 overworld map locally from its seed." />
+    <title>Scrap Mechanic Chapter 2 Map Generator</title>
+  </head>
+  <body>
+    <main class="shell">
+      <p class="eyebrow">Scrap Mechanic · Chapter 2</p>
+      <h1>Generate a map of any world.</h1>
+      <p class="lede">
+        Enter a world seed or upload a Scrap Mechanic save to create its complete
+        Chapter 2 world map—without launching the game.
+      </p>
+      <a class="source-link" href="https://github.com/xKoldx/sm_map_generator" target="_blank" rel="noopener noreferrer">
+        View source on GitHub <span aria-hidden="true">↗</span>
+      </a>
+
+      <form id="generator-form" class="generator">
+        <div class="field seed-field">
+          <label for="seed">World seed or save</label>
+          <div class="seed-control">
+            <input
+              id="seed"
+              name="seed"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="11"
+              placeholder="Enter the seed or upload the save"
+              aria-describedby="seed-help"
+            />
+            <button id="upload-save" class="upload" type="button">Upload save</button>
+            <input id="save-file" class="visually-hidden" type="file" accept=".db,application/x-sqlite3,application/vnd.sqlite3" />
+          </div>
+          <small id="seed-help">A valid Scrap Mechanic .db save is read locally to find its seed.</small>
+          <small class="save-path">Saves are normally in <code>%AppData%\Roaming\Axolot Games\Scrap Mechanic\User\</code>.</small>
+        </div>
+        <label>
+          <span>Output detail</span>
+          <select id="cell-size" name="cell-size">
+            <option value="25">25 px/cell · 3200 × 2400</option>
+            <option value="50">50 px/cell · 6400 × 4800</option>
+            <option value="100" selected>100 px/cell · 12800 × 9600</option>
+          </select>
+        </label>
+        <button id="generate" type="submit">Generate map</button>
+      </form>
+
+      <section id="map-viewer" class="map-viewer" aria-labelledby="map-viewer-title">
+        <div class="map-viewer-bar">
+          <div>
+            <h2 id="map-viewer-title">Map viewer</h2>
+            <p id="map-meta">Upload a generated map to explore it here.</p>
+          </div>
+          <div class="map-viewer-actions">
+            <button id="upload-map" class="upload" type="button">Upload map WebP</button>
+            <input id="map-file" class="visually-hidden" type="file" accept="image/webp,.webp" />
+            <a id="download" class="download" hidden>Download WebP</a>
+          </div>
+        </div>
+        <p id="map-empty" class="map-empty">Your last uploaded or generated map will appear here automatically on this browser.</p>
+        <div id="map-viewport" class="map-viewport" hidden aria-label="Interactive world map">
+          <div id="map-stage" class="map-stage"><img id="map-image" alt="Generated Scrap Mechanic world map" draggable="false" /></div>
+          <div id="map-markers" class="map-marker-layer"></div>
+          <div id="map-pin" class="map-pin" hidden title="Click to remove the pin"><span id="map-pin-label" class="map-pin-label"></span><span class="map-pin-dot"></span></div>
+          <aside id="marker-details" class="marker-details" hidden aria-live="polite">
+            <button id="marker-details-close" class="marker-details-close" type="button" aria-label="Close marker details">×</button>
+            <div class="marker-details-heading">
+              <img id="marker-details-icon" alt="" />
+              <div><small id="marker-details-kind"></small><h3 id="marker-details-title"></h3></div>
+            </div>
+            <div id="marker-details-rewards" hidden><h4 id="marker-details-list-title">Rewards</h4><ul id="marker-details-reward-list"></ul></div>
+          </aside>
+          <div id="viewer-settings" class="viewer-settings" hidden>
+            <strong>Map markers</strong>
+            <label><input type="checkbox" data-marker-kind="builderQuest" /> <span>Builder Quests</span></label>
+            <label><input type="checkbox" data-marker-kind="warehouse" /> <span>Warehouses</span></label>
+            <label><input type="checkbox" data-marker-kind="partUnlockStation" /> <span>Part Unlock Stations</span></label>
+            <label><input type="checkbox" data-marker-kind="ruin" /> <span>Ruins</span></label>
+            <label><input type="checkbox" data-marker-kind="mechanicStation" checked /> <span>Mechanic Stations</span></label>
+            <label><input type="checkbox" data-marker-kind="growlab" checked /> <span>Growlabs</span></label>
+            <label><input type="checkbox" data-marker-kind="packingStation" /> <span>Packing Stations</span></label>
+            <label><input type="checkbox" data-marker-kind="cagedFarmer" /> <span>Caged Farmers</span></label>
+            <label><input type="checkbox" data-marker-kind="beehive" checked /> <span>Beehives</span></label>
+            <label><input type="checkbox" data-marker-kind="cotton" /> <span>Wild Cotton</span></label>
+            <label><input type="checkbox" data-marker-kind="corn" /> <span>Wild Corn</span></label>
+            <label><input type="checkbox" data-marker-kind="oil" /> <span>Oil Geysers</span></label>
+            <label><input type="checkbox" data-marker-kind="pigment" /> <span>Pigment Flowers</span></label>
+            <label><input type="checkbox" data-marker-kind="lootCrate" /> <span>Standard Loot Crates</span></label>
+            <label><input type="checkbox" data-marker-kind="epicLootCrate" /> <span>Epic & Legendary Crates</span></label>
+            <label><input type="checkbox" data-marker-kind="traderHideout" /> <span>Trader Hideout</span></label>
+            <label><input type="checkbox" data-marker-kind="oilPond" /> <span>Oil Ponds & Tar Pits</span></label>
+            <label><input type="checkbox" data-marker-kind="chemicalPond" /> <span>Chemical Ponds</span></label>
+            <label><input type="checkbox" data-marker-kind="siloDistrict" /> <span>Silo District</span></label>
+            <label><input type="checkbox" data-marker-kind="crashSite" /> <span>Crash Site</span></label>
+            <label><input type="checkbox" data-marker-kind="pumpingStation" /> <span>Pumping Stations</span></label>
+            <label><input type="checkbox" data-marker-kind="metalRock" /> <span>Metal Rocks & Stone Nodes</span></label>
+            <!-- Underground deposits reserved for subterranean view
+            <label><input type="checkbox" data-marker-kind="gold" /> <span>Gold Deposits</span></label>
+            <label><input type="checkbox" data-marker-kind="quartz" /> <span>Quartz Deposits</span></label>
+            -->
+          </div>
+          <div class="map-controls" aria-label="Map controls">
+            <button id="viewer-zoom-in" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+            <button id="viewer-zoom-out" type="button" title="Zoom out" aria-label="Zoom out">−</button>
+            <button id="viewer-expand" type="button" title="Open expanded map view" aria-label="Open expanded map view">⤢</button>
+            <button id="viewer-settings-button" type="button" title="Map settings" aria-label="Map settings">⚙</button>
+          </div>
+        </div>
+        <div id="missing" class="missing" hidden></div>
+      </section>
+
+      <div id="status" class="status" role="status" hidden>
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="status-copy">
+          <strong id="status-title"></strong>
+          <span id="status-text" aria-live="polite"></span>
+          <span id="progress-track" class="progress-track" role="progressbar" aria-label="Map generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-bar"></span></span>
+        </span>
+        <button id="cancel" class="cancel" type="button" hidden>Cancel</button>
+      </div>
+
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
