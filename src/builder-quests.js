@@ -61,6 +61,9 @@ export const BUILDER_QUESTS = GENERIC_QUEST_LOCATIONS.map(([uid, x, y], index) =
   { name: "builder_quest_advanced_car", title: "Your Nice Car", rewards: ["Fantastic T-Shirt"], uid: "f3dda4db-8450-4e9d-a501-ec6dbf14a78a", x: 112.14583587646, y: 15.041519165039 },
 ]);
 
+/**
+ * Map marker icons mapping marker kind to custom 256x256 square compass badge PNGs.
+ */
 const ICONS = {
   builderQuest: "assets/ui/debug_compass_builderquest.png",
   warehouse: "assets/ui/debug_compass_warehouse.png",
@@ -88,6 +91,9 @@ const ICONS = {
   metalRock: "assets/ui/debug_compass_rock.png",
 };
 
+/**
+ * Human-readable display titles for overworld resources and extracted structures.
+ */
 const RESOURCE_TITLES = {
   beehive: "Wild Beehive",
   cotton: "Wild Cotton",
@@ -104,9 +110,12 @@ const RESOURCE_TITLES = {
   siloDistrict: "Silo District",
   crashSite: "Crash Site",
   pumpingStation: "Pumping Station",
-  metalRock: "Metal Rock / Stone Node",
+  metalRock: "Stone Node",
 };
 
+/**
+ * Scrap Mechanic POI Tile UIDs extracted from game metadata.
+ */
 const TRADER_UIDS = new Set([
   "ba590d07-4cfc-4b3d-a734-b011f546b666",
   "7d7556b3-0dc7-4b95-9d92-731013b19fc0",
