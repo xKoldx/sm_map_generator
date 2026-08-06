@@ -162,6 +162,27 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     else panY = Math.min(0, Math.max(viewport.clientHeight - displayedHeight, panY));
   }
 
+  let rawMarkerStore = [];
+  let markerElementPool = [];
+
+  function getPooledMarkerElement(index) {
+    if (index < markerElementPool.length) {
+      return markerElementPool[index];
+    }
+    const element = document.createElement("button");
+    element.type = "button";
+    const icon = document.createElement("img");
+    icon.alt = "";
+    const label = document.createElement("span");
+    element.append(icon, label);
+    element.addEventListener("pointerenter", () => setMarkerLabelActive(element, true, "hover"));
+    element.addEventListener("pointerleave", () => setMarkerLabelActive(element, false, "hover"));
+    element.addEventListener("focus", () => setMarkerLabelActive(element, true, "focus"));
+    element.addEventListener("blur", () => setMarkerLabelActive(element, false, "focus"));
+    markerElementPool.push(element);
+    return element;
+  }
+
   function applyTransform() {
     clampPan();
     stage.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
@@ -169,6 +190,8 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
       pin.style.left = `${panX + pinnedPixel.x * scale}px`;
       pin.style.top = `${panY + pinnedPixel.y * scale}px`;
     }
+    if (!rawMarkerStore.length || !imageWidth || !imageHeight) return;
+
     const vpWidth = viewport.clientWidth || window.innerWidth || 1200;
     const vpHeight = viewport.clientHeight || window.innerHeight || 800;
     const margin = 100 / scale;
@@ -177,23 +200,41 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     const minY = -panY / scale - margin;
     const maxY = (-panY + vpHeight) / scale + margin;
 
-    for (const marker of mapMarkerElements) {
-      const kind = marker.dataset.kind;
-      if (markerVisibility[kind] === false) {
-        marker.hidden = true;
-        continue;
-      }
-      const pixelX = Number(marker.dataset.pixelX);
-      const pixelY = Number(marker.dataset.pixelY);
+    let poolIndex = 0;
+    const fragment = document.createDocumentFragment();
 
-      if (pixelX < minX || pixelX > maxX || pixelY < minY || pixelY > maxY) {
-        marker.hidden = true;
-      } else {
-        marker.hidden = false;
-        marker.style.left = `${panX + pixelX * scale}px`;
-        marker.style.top = `${panY + pixelY * scale}px`;
+    for (let i = 0; i < rawMarkerStore.length; i++) {
+      const item = rawMarkerStore[i];
+      if (markerVisibility[item.kind] === false) continue;
+      if (item.pixelX < minX || item.pixelX > maxX || item.pixelY < minY || item.pixelY > maxY) continue;
+
+      const element = getPooledMarkerElement(poolIndex++);
+      element.className = `map-marker map-marker-${item.kind}`;
+      element.setAttribute("aria-label", item.title);
+      element.style.left = `${panX + item.pixelX * scale}px`;
+      element.style.top = `${panY + item.pixelY * scale}px`;
+      const categoryOrder = markerOrder.indexOf(item.kind) + 1;
+      element.style.zIndex = String(categoryOrder * 100000);
+
+      const iconImg = element.firstElementChild;
+      if (element.dataset.iconSrc !== item.iconHref) {
+        iconImg.src = item.iconHref;
+        element.dataset.iconSrc = item.iconHref;
       }
+      const labelSpan = element.lastElementChild;
+      if (labelSpan.textContent !== item.title) {
+        labelSpan.textContent = item.title;
+      }
+
+      element.onclick = (event) => {
+        event.stopPropagation();
+        showMarkerDetails(item.marker);
+      };
+
+      fragment.appendChild(element);
     }
+
+    markerLayer.replaceChildren(fragment);
   }
 
   function scheduleTransform() {
@@ -260,22 +301,6 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     applyTransform();
   }
 
-  function applyMarkerOrder() {
-    for (const element of mapMarkerElements) {
-      const categoryOrder = markerOrder.indexOf(element.dataset.kind) + 1;
-      const pressedOrder = Number(element.dataset.pressedOrder || 0);
-      element.style.zIndex = String(categoryOrder * 100000 + pressedOrder);
-    }
-  }
-
-  function bringMarkerKindToFront(kind) {
-    const currentIndex = markerOrder.indexOf(kind);
-    if (currentIndex >= 0) markerOrder.splice(currentIndex, 1);
-    markerOrder.push(kind);
-    localStorage.setItem(MARKER_ORDER_KEY, JSON.stringify(markerOrder));
-    applyMarkerOrder();
-  }
-
   function setMarkerLabelActive(element, active, source) {
     const collection = source === "focus" ? focusedLabelMarkers : hoveredLabelMarkers;
     if (active) collection.add(element);
@@ -287,43 +312,25 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
   }
 
   function renderMapMarkers(markers) {
-    markerLayer.replaceChildren();
-    mapMarkerElements = [];
+    rawMarkerStore = [];
     hoveredLabelMarkers.clear();
     focusedLabelMarkers.clear();
     markerLayer.classList.remove("marker-label-active");
     markerDetails.hidden = true;
+
     for (const marker of markers || []) {
-      const element = document.createElement("button");
-      element.type = "button";
-      element.className = `map-marker map-marker-${marker.kind}`;
       const px = ((marker.x - WORLD_MIN_X) / (WORLD_MAX_X - WORLD_MIN_X)) * imageWidth;
       const py = ((WORLD_MAX_Y - marker.y) / (WORLD_MAX_Y - WORLD_MIN_Y)) * imageHeight;
-      element.dataset.pixelX = String(px);
-      element.dataset.pixelY = String(py);
-      element.dataset.kind = marker.kind;
-      element.dataset.pressedOrder = "0";
-      element.title = marker.title;
-      element.setAttribute("aria-label", marker.title);
-      const icon = document.createElement("img");
-      icon.src = new URL(marker.icon, document.baseURI).href;
-      icon.alt = "";
-      const label = document.createElement("span");
-      label.textContent = marker.title;
-      element.append(icon, label);
-      element.addEventListener("pointerenter", () => setMarkerLabelActive(element, true, "hover"));
-      element.addEventListener("pointerleave", () => setMarkerLabelActive(element, false, "hover"));
-      element.addEventListener("focus", () => setMarkerLabelActive(element, true, "focus"));
-      element.addEventListener("blur", () => setMarkerLabelActive(element, false, "focus"));
-      element.addEventListener("click", (event) => {
-        event.stopPropagation();
-        showMarkerDetails(marker);
+      rawMarkerStore.push({
+        marker,
+        kind: marker.kind,
+        title: marker.title,
+        pixelX: px,
+        pixelY: py,
+        iconHref: new URL(marker.icon, document.baseURI).href,
       });
-      markerLayer.appendChild(element);
-      mapMarkerElements.push(element);
     }
-    applyMarkerVisibility();
-    applyMarkerOrder();
+
     applyTransform();
   }
 
