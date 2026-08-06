@@ -202,10 +202,8 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
 
     let poolIndex = 0;
     const fragment = document.createDocumentFragment();
-    const MAX_VISIBLE_DOM_MARKERS = 400;
 
     for (let i = 0; i < rawMarkerStore.length; i++) {
-      if (poolIndex >= MAX_VISIBLE_DOM_MARKERS) break;
       const item = rawMarkerStore[i];
       if (markerVisibility[item.kind] === false) continue;
       if (item.pixelX < minX || item.pixelX > maxX || item.pixelY < minY || item.pixelY > maxY) continue;
