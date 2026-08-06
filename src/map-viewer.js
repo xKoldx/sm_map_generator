@@ -547,7 +547,6 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     const updateVisibility = () => {
       markerVisibility[kind] = input.checked;
       localStorage.setItem(`sm-map-show-${kind}`, String(input.checked));
-      bringMarkerKindToFront(kind);
       applyTransform();
       if (!input.checked && markerDetailsKind.textContent === MARKER_KIND_LABELS[kind]) {
         markerDetails.hidden = true;
