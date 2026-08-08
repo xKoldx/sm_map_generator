@@ -293,7 +293,9 @@ export async function readScrapMechanicSaveData(file) {
       );
       if (scriptDataTable && Number.isInteger(scriptDataTable[3])) {
         const scriptRows = await database.tableRecords(scriptDataTable[3]);
-        // Channel 58 corresponds to STORAGE_CHANNEL_SCANNERBOT_MANAGER
+        // Storage Channel 58 (`STORAGE_CHANNEL_SCANNERBOT_MANAGER` in Scrap Mechanic game scripts).
+        // Contains binary-serialized JSON encoding Scannerbot's active position, hunt mode flags,
+        // player tracking locations, and visited road memory tables.
         for (const row of scriptRows) {
           const key = row[1];
           if (key === 58 || (typeof key === "number" && key === 58)) {

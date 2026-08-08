@@ -17,27 +17,28 @@ Generate a complete, interactive Scrap Mechanic Chapter 2 world map directly in 
 ## Features & Overworld Data (28,998+ Markers)
 
 - **Complete Binary & Tileson Asset Extraction:** Direct parsing of Scrap Mechanic game files for exact overworld coordinate mapping.
-- **Scannerbot Path & Scan Zone Overlay:**
-  - **Patrol Path Simulation:** Predicts Scannerbot road network navigation and active patrol routes derived from `ScannerbotManager.lua` overworld cell logic.
-  - **Animated Patrol Line & Radar Pings:** Renders red patrol trajectories with animated dash vectors and pulsing location pings.
-  - **Translucent 64m Pink Scan Zone:** Overlays a 64m-radius translucent pink corridor depicting Scannerbot's scanner detection range.
-  - **Interactive Toggles:** Independent toolbar checkboxes to toggle Scannerbot Path and Scan Zone overlays on demand.
+- **Scannerbot Path & Threat Zone Overlay:**
+  - **Patrol Route & Detection Sweep:** Visualizes where Scannerbot is traveling and highlights its 64-meter scanning zone along the road network.
+  - **Live Position & Destination Tracking:** Displays Scannerbot's current location and destination so you can safely navigate around it.
+  - **Interactive Toggles:** Easily turn patrol lines and pink scan zone overlays on or off from the toolbar.
 
 ---
 
-## Scannerbot Mechanics & Path Simulation
+## Scannerbot & Threat Zone Guide
 
-In Scrap Mechanic Chapter 2, **Scannerbot** is an autonomous patrol entity that roams the island's road network:
+**Scannerbot** is the automated security robot that patrols the overworld roads in Scrap Mechanic Chapter 2.
 
-* **64m Scan Detection Corridor:** Scannerbot continuously scans a **64-meter radius corridor** along roads for player presence or activity.
-* **Patrol & Hunt Modes:** Navigates interconnected road cells (`ScannerbotManager.lua`). If player activity is detected, Scannerbot switches from standard road patrol into **Hunt Mode** to pursue location targets.
-* **Save File vs. Seed Generation:**
-  * **Saved World (`.db`):** Reads the exact saved Scannerbot state from SQLite (`ScriptData` Channel 58), including live position (`scannerbotData.currentPosition`), active hunt targets, player locations, and visited road memory.
-  * **World Seed:** Simulates default patrol pathing originating from the Mechanic Station spawn location across the road network.
-* **Visual Map Indicators:**
-  * **Animated Red Line:** Shows the predicted road navigation route with directional vector animations.
-  * **Pulsing Radar Beacon:** Displays Scannerbot's exact location and target destination.
-  * **Translucent Pink Zone:** Shows the full 64m detection sweep so players can plan safe navigation routes around Scannerbot.
+* **What is the 64m Pink Scan Zone?**
+  Scannerbot continuously sweeps a **64-meter wide radius** along roads for player movement or activity. If you build, drive, or move inside this pink zone, Scannerbot can detect you and switch into **Hunt Mode** to track your location. Staying outside the pink zone keeps you safe.
+
+* **How Map Generator Data Works for You:**
+  * **Uploading Your Save File (`.db`):** Shows where Scannerbot **actually is right now** in your world, including whether it is actively hunting you or patrolling normal routes.
+  * **Entering a World Seed:** Shows Scannerbot's default starting patrol route beginning at the **Mechanic Station**.
+
+* **Map Symbols & Lines:**
+  * **Animated Red Line:** Scannerbot's active travel route along the road network.
+  * **Pulsing Radar Beacon:** Scannerbot's exact live position and destination point.
+  * **Translucent Pink Zone:** The 64-meter detection zone where Scannerbot's sensors can spot you.
 - **Resource Deposits & Flora:**
   - **Oil Geysers** (9,923 markers)
   - **Standard Loot Crates** (6,205 markers with custom green compass badge)

@@ -1,6 +1,38 @@
 // seekerbot-path.js
-// Calculates Seekerbot (Scannerbot) predicted path & full road network across Scrap Mechanic overworld cells,
-// following official ScannerbotManager.lua algorithms.
+/**
+ * =========================================================================================
+ * ADVANCED TECHNICAL DOCUMENTATION: SCANNERBOT (SEEKERBOT) PATH & THREAT ZONE ENGINE
+ * =========================================================================================
+ * 
+ * Game Mechanics & Lua Script Interface:
+ * - Scrap Mechanic Chapter 2 introduces the Scannerbot manager entity (`ScannerbotManager.lua`).
+ * - Scannerbot patrols overworld road cells mapped in game files using a directional node traversal graph.
+ * - Road detection uses cell bitmasks (MASK_ROADS = 0x0f00) and game tile UUID maps.
+ * 
+ * SQLite Save File Integration (`save-reader.js`):
+ * - In saved worlds (.db), Scannerbot state is stored in table `ScriptData` at Channel 58:
+ *   `STORAGE_CHANNEL_SCANNERBOT_MANAGER = 58`
+ * - Decoded JSON payload schema:
+ *   {
+ *     "scannerbotData": { "currentPosition": { "x": number, "y": number, "z": number } },
+ *     "huntMode": boolean,
+ *     "huntModeTarget": { "locationOfInterest": { "x": number, "y": number } },
+ *     "visitedRoads": Record<string, number>,
+ *     "playerLocations": Array<{ "x": number, "y": number }>
+ *   }
+ * 
+ * Fallback & Seed Logic:
+ * - If generating purely from a world seed without a save file, initial patrol origin defaults
+ *   to the Mechanic Station quest tile ground coordinates, simulating default initial spawn.
+ * 
+ * Rendering & Visual Overlay Pipeline (`map-viewer.js` & `style.css`):
+ * - 64m Threat Zone: Renders a translucent pink corridor (`stroke-width: cellSize * 2.0`)
+ *   mirroring Scannerbot's 64m detection radius.
+ * - Path Vector: Renders red road segments with glow filters, plus an active path vector line
+ *   using SVG `stroke-dasharray` and CSS `@keyframes seekerbotDash` (`stroke-dashoffset`)
+ *   for smooth 60 FPS GPU-accelerated marching directional animation.
+ * =========================================================================================
+ */
 
 const CELL_SIZE = 64;
 const MASK_ROADS = 0x0f00;
