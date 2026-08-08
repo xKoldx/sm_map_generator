@@ -17,6 +17,11 @@ Generate a complete, interactive Scrap Mechanic Chapter 2 world map directly in 
 ## Features & Overworld Data (28,998+ Markers)
 
 - **Complete Binary & Tileson Asset Extraction:** Direct parsing of Scrap Mechanic game files for exact overworld coordinate mapping.
+- **Scannerbot Path & Scan Zone Overlay:**
+  - **Patrol Path Simulation:** Predicts Scannerbot road network navigation and active patrol routes derived from `ScannerbotManager.lua` overworld cell logic.
+  - **Animated Patrol Line & Radar Pings:** Renders red patrol trajectories with animated dash vectors and pulsing location pings.
+  - **Translucent 64m Pink Scan Zone:** Overlays a 64m-radius translucent pink corridor depicting Scannerbot's scanner detection range.
+  - **Interactive Toggles:** Independent toolbar checkboxes to toggle Scannerbot Path and Scan Zone overlays on demand.
 - **Resource Deposits & Flora:**
   - **Oil Geysers** (9,923 markers)
   - **Standard Loot Crates** (6,205 markers with custom green compass badge)
@@ -40,6 +45,7 @@ Generate a complete, interactive Scrap Mechanic Chapter 2 world map directly in 
   - **Trader Hideout** (1 marker)
   - **Oil Pond / Tar Pit** (1 marker)
 - **High-Performance 60 FPS Viewport Engine:**
+  - **Dynamic Viewer Size Selector:** Switch between **Small**, **Medium**, and **Large** viewport dimensions with persistent layout preference saving.
   - **Spatial Clustering:** Intelligent 8m–24m radius clustering algorithms to eliminate icon clutter while preserving patch locations.
   - **View Frustum Culling:** Real-time viewport clipping so only visible icons are rendered, maintaining smooth 60 FPS scrolling and panning over 28,000+ total markers.
 
