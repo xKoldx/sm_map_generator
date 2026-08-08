@@ -22,6 +22,22 @@ Generate a complete, interactive Scrap Mechanic Chapter 2 world map directly in 
   - **Animated Patrol Line & Radar Pings:** Renders red patrol trajectories with animated dash vectors and pulsing location pings.
   - **Translucent 64m Pink Scan Zone:** Overlays a 64m-radius translucent pink corridor depicting Scannerbot's scanner detection range.
   - **Interactive Toggles:** Independent toolbar checkboxes to toggle Scannerbot Path and Scan Zone overlays on demand.
+
+---
+
+## Scannerbot Mechanics & Path Simulation
+
+In Scrap Mechanic Chapter 2, **Scannerbot** is an autonomous patrol entity that roams the island's road network:
+
+* **64m Scan Detection Corridor:** Scannerbot continuously scans a **64-meter radius corridor** along roads for player presence or activity.
+* **Patrol & Hunt Modes:** Navigates interconnected road cells (`ScannerbotManager.lua`). If player activity is detected, Scannerbot switches from standard road patrol into **Hunt Mode** to pursue location targets.
+* **Save File vs. Seed Generation:**
+  * **Saved World (`.db`):** Reads the exact saved Scannerbot state from SQLite (`ScriptData` Channel 58), including live position (`scannerbotData.currentPosition`), active hunt targets, player locations, and visited road memory.
+  * **World Seed:** Simulates default patrol pathing originating from the Mechanic Station spawn location across the road network.
+* **Visual Map Indicators:**
+  * **Animated Red Line:** Shows the predicted road navigation route with directional vector animations.
+  * **Pulsing Radar Beacon:** Displays Scannerbot's exact location and target destination.
+  * **Translucent Pink Zone:** Shows the full 64m detection sweep so players can plan safe navigation routes around Scannerbot.
 - **Resource Deposits & Flora:**
   - **Oil Geysers** (9,923 markers)
   - **Standard Loot Crates** (6,205 markers with custom green compass badge)
