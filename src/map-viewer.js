@@ -378,9 +378,191 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     return { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
   }
 
-  function setMapSource(blob, name, details, seed, markers) {
+  const seekerbotSvg = document.querySelector("#seekerbot-svg-overlay");
+  const seekerbotPathToggle = document.querySelector("#seekerbot-path-toggle");
+  const seekerbotZoneToggle = document.querySelector("#seekerbot-zone-toggle");
+  let currentSeekerbotResult = null;
+
+  function renderSeekerbotPath(seekerbotResult = currentSeekerbotResult) {
+    currentSeekerbotResult = seekerbotResult;
+    if (!seekerbotSvg || !imageWidth || !imageHeight) return;
+
+    seekerbotSvg.setAttribute("width", String(imageWidth));
+    seekerbotSvg.setAttribute("height", String(imageHeight));
+    seekerbotSvg.setAttribute("viewBox", `0 0 ${imageWidth} ${imageHeight}`);
+    seekerbotSvg.style.width = `${imageWidth}px`;
+    seekerbotSvg.style.height = `${imageHeight}px`;
+
+    const isPathVisible = seekerbotPathToggle ? seekerbotPathToggle.checked : true;
+    const isZoneVisible = seekerbotZoneToggle ? seekerbotZoneToggle.checked : true;
+    seekerbotSvg.style.display = (isPathVisible || isZoneVisible) ? "block" : "none";
+
+    const pathPoints = seekerbotResult?.path || [];
+    const rawSegments = seekerbotResult?.segments || [];
+
+    if (!pathPoints.length && !rawSegments.length) {
+      seekerbotSvg.replaceChildren();
+      return;
+    }
+
+    const cellSize = imageWidth / 128;
+    const namespace = "http://www.w3.org/2000/svg";
+    const fragment = document.createDocumentFragment();
+
+    const defs = document.createElementNS(namespace, "defs");
+    defs.innerHTML = `
+      <filter id="seeker-red-glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    `;
+    fragment.appendChild(defs);
+
+    let networkD = "";
+    if (rawSegments.length > 0) {
+      for (const seg of rawSegments) {
+        const p1 = { x: (seg[0].x + 64.5) * cellSize, y: (47.5 - seg[0].y) * cellSize };
+        const p2 = { x: (seg[1].x + 64.5) * cellSize, y: (47.5 - seg[1].y) * cellSize };
+        networkD += `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} L ${p2.x.toFixed(1)},${p2.y.toFixed(1)} `;
+      }
+    }
+
+    // 1. Render Seekerbot Scan Zone (Translucent Pink 64m Radius Corridor on both sides of road lines)
+    if (isZoneVisible && networkD) {
+      const zoneGroup = document.createElementNS(namespace, "g");
+
+      const zoneFillPath = document.createElementNS(namespace, "path");
+      zoneFillPath.setAttribute("d", networkD);
+      zoneFillPath.setAttribute("fill", "none");
+      zoneFillPath.setAttribute("stroke", "rgba(255, 42, 133, 0.22)");
+      zoneFillPath.setAttribute("stroke-width", String(cellSize * 2.0));
+      zoneFillPath.setAttribute("stroke-linecap", "round");
+      zoneFillPath.setAttribute("stroke-linejoin", "round");
+
+      const zoneBoundaryPath = document.createElementNS(namespace, "path");
+      zoneBoundaryPath.setAttribute("d", networkD);
+      zoneBoundaryPath.setAttribute("fill", "none");
+      zoneBoundaryPath.setAttribute("stroke", "rgba(255, 105, 180, 0.5)");
+      zoneBoundaryPath.setAttribute("stroke-width", String(cellSize * 2.05));
+      zoneBoundaryPath.setAttribute("stroke-linecap", "round");
+      zoneBoundaryPath.setAttribute("stroke-linejoin", "round");
+      zoneBoundaryPath.setAttribute("stroke-dasharray", `${cellSize * 0.25} ${cellSize * 0.25}`);
+
+      zoneGroup.appendChild(zoneFillPath);
+      zoneGroup.appendChild(zoneBoundaryPath);
+      fragment.appendChild(zoneGroup);
+    }
+
+    // 2. Render connected Seekerbot road network segments (Red Line)
+    if (isPathVisible && networkD) {
+      const networkGroup = document.createElementNS(namespace, "g");
+      networkGroup.setAttribute("stroke", "#ff2a55");
+      networkGroup.setAttribute("stroke-width", String(Math.max(2.5, cellSize * 0.06)));
+      networkGroup.setAttribute("stroke-linecap", "round");
+      networkGroup.setAttribute("opacity", "0.85");
+      networkGroup.setAttribute("filter", "url(#seeker-red-glow)");
+
+      const networkPath = document.createElementNS(namespace, "path");
+      networkPath.setAttribute("d", networkD);
+      networkPath.setAttribute("fill", "none");
+      networkGroup.appendChild(networkPath);
+      fragment.appendChild(networkGroup);
+    }
+
+    // 3. Render primary active Seekerbot patrol path line with animated dashes
+    if (isPathVisible && pathPoints.length > 1) {
+      const points = pathPoints.map((p) => ({
+        x: (p.x + 64.5) * cellSize,
+        y: (47.5 - p.y) * cellSize,
+      }));
+
+      const pathD = "M " + points.map((pt) => `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(" L ");
+
+      const mainPath = document.createElementNS(namespace, "path");
+      mainPath.setAttribute("d", pathD);
+      mainPath.setAttribute("fill", "none");
+      mainPath.setAttribute("stroke", "#ffffff");
+      mainPath.setAttribute("stroke-width", String(Math.max(4, cellSize * 0.09)));
+      mainPath.setAttribute("stroke-linecap", "round");
+      mainPath.setAttribute("stroke-linejoin", "round");
+      mainPath.setAttribute("stroke-dasharray", `${cellSize * 0.3} ${cellSize * 0.15}`);
+      mainPath.classList.add("seekerbot-animated-path");
+      fragment.appendChild(mainPath);
+
+      const startPt = points[0];
+      const targetPt = points[points.length - 1];
+
+      if (startPt) {
+        const startGroup = document.createElementNS(namespace, "g");
+        startGroup.setAttribute("transform", `translate(${startPt.x}, ${startPt.y})`);
+
+        const pulseRing = document.createElementNS(namespace, "circle");
+        pulseRing.setAttribute("r", String(Math.max(14, cellSize * 0.35)));
+        pulseRing.setAttribute("fill", "rgba(255, 42, 85, 0.35)");
+        pulseRing.setAttribute("stroke", "#ff2a55");
+        pulseRing.setAttribute("stroke-width", "2");
+        pulseRing.classList.add("seekerbot-ping");
+
+        const centerDot = document.createElementNS(namespace, "circle");
+        centerDot.setAttribute("r", String(Math.max(7, cellSize * 0.16)));
+        centerDot.setAttribute("fill", "#ff2a55");
+        centerDot.setAttribute("stroke", "#ffffff");
+        centerDot.setAttribute("stroke-width", "2");
+
+        startGroup.appendChild(pulseRing);
+        startGroup.appendChild(centerDot);
+        fragment.appendChild(startGroup);
+      }
+
+      if (targetPt && points.length > 1) {
+        const targetGroup = document.createElementNS(namespace, "g");
+        targetGroup.setAttribute("transform", `translate(${targetPt.x}, ${targetPt.y})`);
+
+        const crossRing = document.createElementNS(namespace, "circle");
+        crossRing.setAttribute("r", String(Math.max(10, cellSize * 0.25)));
+        crossRing.setAttribute("fill", "none");
+        crossRing.setAttribute("stroke", "#ff2a55");
+        crossRing.setAttribute("stroke-width", "2");
+
+        const lineV = document.createElementNS(namespace, "line");
+        lineV.setAttribute("x1", "0");
+        lineV.setAttribute("y1", String(-cellSize * 0.35));
+        lineV.setAttribute("x2", "0");
+        lineV.setAttribute("y2", String(cellSize * 0.35));
+        lineV.setAttribute("stroke", "#ff2a55");
+        lineV.setAttribute("stroke-width", "2");
+
+        const lineH = document.createElementNS(namespace, "line");
+        lineH.setAttribute("x1", String(-cellSize * 0.35));
+        lineH.setAttribute("y1", "0");
+        lineH.setAttribute("x2", String(cellSize * 0.35));
+        lineH.setAttribute("y2", "0");
+        lineH.setAttribute("stroke", "#ff2a55");
+        lineH.setAttribute("stroke-width", "2");
+
+        targetGroup.appendChild(crossRing);
+        targetGroup.appendChild(lineV);
+        targetGroup.appendChild(lineH);
+        fragment.appendChild(targetGroup);
+      }
+    }
+
+    seekerbotSvg.replaceChildren(fragment);
+  }
+
+  seekerbotPathToggle?.addEventListener("change", () => {
+    renderSeekerbotPath();
+  });
+  seekerbotZoneToggle?.addEventListener("change", () => {
+    renderSeekerbotPath();
+  });
+
+  function setMapSource(blob, name, details, seed, markers, seekerbotPath = null) {
     if (mapUrl) URL.revokeObjectURL(mapUrl);
-    currentMapSource = { blob, name, details, seed, markers };
+    currentMapSource = { blob, name, details, seed, markers, seekerbotPath };
     mapSuspended = false;
     mapUrl = URL.createObjectURL(blob);
     imageWidth = details.width;
@@ -401,6 +583,7 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     meta.textContent = `${seedLabel}${imageWidth.toLocaleString()} × ${imageHeight.toLocaleString()} · ${formatSize(blob.size)} · ${name || "map.webp"}`;
     removePin();
     renderMapMarkers(markers);
+    renderSeekerbotPath(seekerbotPath);
     requestAnimationFrame(fitMap);
   }
 
@@ -423,24 +606,31 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
     requestAnimationFrame(fitMap);
   }
 
-  async function showMap(blob, name, { persist = true, seed = null, mapMarkers = null, builderQuests = null } = {}) {
+  async function showMap(blob, name, { persist = true, seed = null, mapMarkers = null, seekerbotPath = null, builderQuests = null } = {}) {
     if (!(blob instanceof Blob)) throw new Error("The selected map could not be read.");
     const [details, metadataSeed] = await Promise.all([imageDetails(blob), readWebPSeed(blob)]);
     const resolvedSeed = Number.isInteger(seed) ? seed : metadataSeed ?? seedFromFilename(name);
     let resolvedMarkers = mapMarkers ?? builderQuests;
+    let resolvedSeekerbotPath = seekerbotPath;
     const markersNeedRefresh = !Array.isArray(resolvedMarkers) || resolvedMarkers.some(
       (marker) => !marker?.kind || !marker?.title || !marker?.icon,
     );
-    if (markersNeedRefresh && Number.isInteger(resolvedSeed) && resolveMarkers) {
+    if ((markersNeedRefresh || !resolvedSeekerbotPath) && Number.isInteger(resolvedSeed) && resolveMarkers) {
       try {
-        resolvedMarkers = await resolveMarkers(resolvedSeed);
+        const resolved = await resolveMarkers(resolvedSeed);
+        if (Array.isArray(resolved)) {
+          resolvedMarkers = resolved;
+        } else if (resolved && typeof resolved === "object") {
+          resolvedMarkers = resolved.mapMarkers || resolvedMarkers;
+          resolvedSeekerbotPath = resolved.seekerbotPath || resolvedSeekerbotPath;
+        }
       } catch (error) {
         console.error(error);
         onWarning?.("The map opened, but its structure markers could not be generated.");
       }
     }
     resolvedMarkers ??= [];
-    setMapSource(blob, name, details, resolvedSeed, resolvedMarkers);
+    setMapSource(blob, name, details, resolvedSeed, resolvedMarkers, resolvedSeekerbotPath);
     if (!persist) return details;
     try {
       await writeLastMap({
@@ -448,6 +638,7 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
         name: name || "scrap-mechanic-map.webp",
         seed: resolvedSeed,
         mapMarkers: resolvedMarkers,
+        seekerbotPath: resolvedSeekerbotPath,
         markerDataVersion: MARKER_DATA_VERSION,
         savedAt: Date.now(),
       });
@@ -467,6 +658,7 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
           persist: false,
           seed: saved.seed,
           mapMarkers: markersAreCurrent ? saved.mapMarkers : null,
+          seekerbotPath: markersAreCurrent ? saved.seekerbotPath : null,
           builderQuests: markersAreCurrent ? saved.builderQuests : null,
         });
       }
@@ -627,5 +819,5 @@ export function setupMapViewer({ onWarning, resolveMarkers } = {}) {
 
   window.addEventListener("resize", fitMap);
 
-  return { showMap, restoreLastMap, fitMap, suspendMap, resumeMap };
+  return { showMap, restoreLastMap, fitMap, suspendMap, resumeMap, renderSeekerbotPath };
 }

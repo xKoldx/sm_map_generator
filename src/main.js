@@ -1,7 +1,8 @@
 import "./style.css";
 import { composeMap } from "./renderer.js";
 import { setupMapViewer } from "./map-viewer.js";
-import { InvalidSaveError, readScrapMechanicSeed } from "./save-reader.js";
+import { InvalidSaveError, readScrapMechanicSaveData } from "./save-reader.js";
+import { computeSeekerbotPath } from "./seekerbot-path.js";
 
 const form = document.querySelector("#generator-form");
 const seedInput = document.querySelector("#seed");
@@ -21,6 +22,7 @@ const mapViewerElement = document.querySelector("#map-viewer");
 let activeController = null;
 let activeWorker = null;
 let activeSeed = null;
+let uploadedSeekerbotState = null;
 
 function abortError() {
   return new DOMException("Map generation was cancelled.", "AbortError");
@@ -88,11 +90,12 @@ saveInput.addEventListener("change", async () => {
   uploadButton.textContent = "Reading…";
   setStatus("Reading save file", `Finding the world seed in ${file.name}…`, "working", 25);
   try {
-    const seed = await readScrapMechanicSeed(file);
-    seedInput.value = String(seed);
+    const saveData = await readScrapMechanicSaveData(file);
+    seedInput.value = String(saveData.seed);
+    uploadedSeekerbotState = saveData.seekerbotState;
     setStatus(
-      `Seed ${seed} found`,
-      `${file.name} is a valid Scrap Mechanic save. It is ready to generate.`,
+      `Seed ${saveData.seed} found`,
+      `${file.name} is a valid Scrap Mechanic save.${saveData.seekerbotState ? " Active Seekerbot state loaded." : ""} It is ready to generate.`,
       "done",
       100,
     );
@@ -161,7 +164,7 @@ function generateInWorker(seed, cellSize, signal, onProgress) {
             if (renderMessage?.type === "progress") {
               onProgress(renderMessage.message, renderMessage.percent);
             } else if (renderMessage?.type === "result") {
-              finish(resolve, { ...renderMessage, mapMarkers: message.mapMarkers });
+              finish(resolve, { ...renderMessage, mapMarkers: message.mapMarkers, cells: message.cells });
             } else if (renderMessage?.type === "error") {
               finish(reject, new Error(renderMessage.message || "Map rendering failed."));
             }
@@ -184,7 +187,7 @@ function generateInWorker(seed, cellSize, signal, onProgress) {
             signal,
             seed,
           });
-          finish(resolve, { ...rendered, seed, mapMarkers: message.mapMarkers });
+          finish(resolve, { ...rendered, seed, mapMarkers: message.mapMarkers, cells: message.cells });
         } catch (error) {
           finish(reject, error);
         }
@@ -213,13 +216,21 @@ function generateMapMarkers(seed) {
     worker.addEventListener("message", (event) => {
       if (event.data?.type === "markers") {
         cleanup();
-        resolve(event.data.mapMarkers || []);
+        resolve({
+          mapMarkers: event.data.mapMarkers || [],
+          seekerbotPath: event.data.seekerbotPath || null,
+        });
       } else if (event.data?.type === "error") {
         cleanup();
         reject(new Error(event.data.message || "Map markers could not be generated."));
       }
     });
-    worker.postMessage({ type: "generate-markers", seed, baseUrl: document.baseURI });
+    worker.postMessage({
+      type: "generate-markers",
+      seed,
+      seekerbotState: uploadedSeekerbotState,
+      baseUrl: document.baseURI,
+    });
   });
 }
 
@@ -272,9 +283,13 @@ form.addEventListener("submit", async (event) => {
     };
     const rendered = await generateInWorker(seed, cellSize, controller.signal, update);
     controller.signal.throwIfAborted();
+    const seekerbotResult = Array.isArray(rendered.cells)
+      ? computeSeekerbotPath(rendered.cells, uploadedSeekerbotState)
+      : rendered.seekerbotPath;
     await mapViewer.showMap(rendered.blob, `scrap-mechanic-ch2-${seed}.webp`, {
       seed,
       mapMarkers: rendered.mapMarkers,
+      seekerbotPath: seekerbotResult,
     });
     generatedMap = true;
     if (rendered.missing.length) {

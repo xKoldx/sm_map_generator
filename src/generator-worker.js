@@ -1,4 +1,5 @@
 import { findMapMarkers } from "./builder-quests.js";
+import { computeSeekerbotPath } from "./seekerbot-path.js";
 
 let generatorPromise;
 
@@ -14,7 +15,7 @@ async function loadGenerator(baseUrl) {
 
 self.addEventListener("message", async (event) => {
   if (event.data?.type !== "generate" && event.data?.type !== "generate-markers") return;
-  const { seed, baseUrl } = event.data;
+  const { seed, baseUrl, seekerbotState } = event.data;
   const progress = (message, percent) => {
     self.postMessage({ type: "progress", message, percent });
   };
@@ -23,11 +24,12 @@ self.addEventListener("message", async (event) => {
     const { generateCells } = await loadGenerator(baseUrl);
     const cells = await generateCells(seed, progress);
     const mapMarkers = findMapMarkers(cells);
+    const seekerbotPath = computeSeekerbotPath(cells, seekerbotState);
     if (event.data.type === "generate-markers") {
-      self.postMessage({ type: "markers", seed, mapMarkers });
+      self.postMessage({ type: "markers", seed, mapMarkers, seekerbotPath });
       return;
     }
-    self.postMessage({ type: "cells", cells, mapMarkers });
+    self.postMessage({ type: "cells", cells, mapMarkers, seekerbotPath });
   } catch (error) {
     self.postMessage({
       type: "error",

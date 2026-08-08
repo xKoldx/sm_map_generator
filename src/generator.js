@@ -272,7 +272,8 @@ for y = -48, 47 do
                 x, y, tostring(uid), GetSize(uid) or 1,
                 g_cellData.rotation[y][x] or 0,
                 g_cellData.groupId[y][x] or 0,
-                terrainType
+                terrainType,
+                flags
             }, "\\t")
         end
     end
@@ -305,7 +306,7 @@ export async function generateCells(seed, onProgress = () => {}) {
       .split("\n")
       .filter(Boolean)
       .map((line) => {
-        const [x, y, uid, size, rotation, group, terrainType] = line.split("\t");
+        const [x, y, uid, size, rotation, group, terrainType, flags] = line.split("\t");
         return {
           x: Number(x),
           y: Number(y),
@@ -314,6 +315,7 @@ export async function generateCells(seed, onProgress = () => {}) {
           rotation: Number(rotation),
           group: Number(group),
           terrainType: Number(terrainType),
+          flags: Number(flags || 0),
         };
       });
     onProgress(`World layout complete · ${cells.length.toLocaleString()} populated cells`, 32);

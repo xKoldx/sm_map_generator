@@ -258,7 +258,7 @@ class SQLiteFile {
   }
 }
 
-export async function readScrapMechanicSeed(file) {
+export async function readScrapMechanicSaveData(file) {
   try {
     const database = new SQLiteFile(file);
     await database.initialize();
@@ -283,10 +283,44 @@ export async function readScrapMechanicSeed(file) {
     if (!Number.isInteger(seed) || seed < -2147483648 || seed > 2147483647) {
       fail("The save does not contain a supported world seed.");
     }
-    return seed;
+
+    let seekerbotState = null;
+    try {
+      const scriptDataTable = schema.find(
+        (row) =>
+          String(row[0]).toLowerCase() === "table" &&
+          String(row[1]).toLowerCase() === "scriptdata",
+      );
+      if (scriptDataTable && Number.isInteger(scriptDataTable[3])) {
+        const scriptRows = await database.tableRecords(scriptDataTable[3]);
+        // Channel 58 corresponds to STORAGE_CHANNEL_SCANNERBOT_MANAGER
+        for (const row of scriptRows) {
+          const key = row[1];
+          if (key === 58 || (typeof key === "number" && key === 58)) {
+            const dataBytes = row[4];
+            if (dataBytes instanceof Uint8Array) {
+              const text = new TextDecoder().decode(dataBytes);
+              if (text.includes("huntMode") || text.includes("scannerbotData")) {
+                seekerbotState = JSON.parse(text);
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // Non-fatal if Seekerbot state is not parsed
+    }
+
+    return { seed, seekerbotState };
   } catch (error) {
     if (error instanceof InvalidSaveError) throw error;
     console.error("Save parsing failed", error);
     throw new InvalidSaveError();
   }
 }
+
+export async function readScrapMechanicSeed(file) {
+  const result = await readScrapMechanicSaveData(file);
+  return result.seed;
+}
+

@@ -72,7 +72,10 @@
         </div>
         <p id="map-empty" class="map-empty">Your last uploaded or generated map will appear here automatically on this browser.</p>
         <div id="map-viewport" class="map-viewport" hidden aria-label="Interactive world map">
-          <div id="map-stage" class="map-stage"><img id="map-image" alt="Generated Scrap Mechanic world map" draggable="false" /></div>
+          <div id="map-stage" class="map-stage">
+            <img id="map-image" alt="Generated Scrap Mechanic world map" draggable="false" />
+            <svg id="seekerbot-svg-overlay" class="seekerbot-svg-overlay" aria-hidden="true"></svg>
+          </div>
           <div id="map-markers" class="map-marker-layer"></div>
           <div id="map-pin" class="map-pin" hidden title="Click to remove the pin"><span id="map-pin-label" class="map-pin-label"></span><span class="map-pin-dot"></span></div>
           <aside id="marker-details" class="marker-details" hidden aria-live="polite">
@@ -84,7 +87,9 @@
             <div id="marker-details-rewards" hidden><h4 id="marker-details-list-title">Rewards</h4><ul id="marker-details-reward-list"></ul></div>
           </aside>
           <div id="viewer-settings" class="viewer-settings" hidden>
-            <strong>Map markers</strong>
+            <strong>Map overlays & markers</strong>
+            <label class="seekerbot-setting-label"><input type="checkbox" id="seekerbot-path-toggle" checked /> <span>Seekerbot Path <span class="seekerbot-badge">(Red Line)</span></span></label>
+            <label class="seekerbot-setting-label"><input type="checkbox" id="seekerbot-zone-toggle" checked /> <span>Seekerbot Scan Zone <span class="seekerbot-zone-badge">(Pink Radius)</span></span></label>
             <label><input type="checkbox" data-marker-kind="builderQuest" /> <span>Builder Quests</span></label>
             <label><input type="checkbox" data-marker-kind="warehouse" /> <span>Warehouses</span></label>
             <label><input type="checkbox" data-marker-kind="partUnlockStation" /> <span>Part Unlock Stations</span></label>

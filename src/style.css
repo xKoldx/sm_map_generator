@@ -427,9 +427,6 @@ button:disabled { cursor: wait; opacity: 0.55; transform: none; }
   opacity: 1;
   visibility: visible;
 }
-  pointer-events: auto;
-  transform: translate(-50%, -50%);
-}
 
 .map-marker:hover,
 .map-marker:focus-visible {
@@ -603,6 +600,64 @@ button:disabled { cursor: wait; opacity: 0.55; transform: none; }
   font-size: 0.74rem;
   font-weight: 700;
   margin-left: 4px;
+}
+
+/* Seekerbot Red Path Line & Overlay */
+.seekerbot-svg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 150;
+  overflow: visible;
+}
+
+.seekerbot-animated-path {
+  animation: seekerbotDash 2.5s linear infinite;
+}
+
+@keyframes seekerbotDash {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+.seekerbot-ping {
+  animation: seekerbotPulse 1.8s ease-out infinite;
+}
+
+@keyframes seekerbotPulse {
+  0% {
+    r: 8px;
+    opacity: 1;
+  }
+  100% {
+    r: 32px;
+    opacity: 0;
+  }
+}
+
+.seekerbot-badge {
+  color: #ff2a55;
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.seekerbot-zone-badge {
+  color: #ff69b4;
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.seekerbot-setting-label {
+  border-bottom: 1px solid rgba(255, 42, 85, 0.25);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
 }
 
 .map-viewer.expanded {
