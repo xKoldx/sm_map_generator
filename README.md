@@ -22,23 +22,6 @@ Generate a complete, interactive Scrap Mechanic Chapter 2 world map directly in 
   - **Live Position & Destination Tracking:** Displays Scannerbot's current location and destination so you can safely navigate around it.
   - **Interactive Toggles:** Easily turn patrol lines and pink scan zone overlays on or off from the toolbar.
 
----
-
-## Scannerbot & Threat Zone Guide
-
-**Scannerbot** is the automated security robot that patrols the overworld roads in Scrap Mechanic Chapter 2.
-
-* **What is the 64m Pink Scan Zone?**
-  Scannerbot continuously sweeps a **64-meter wide radius** along roads for player movement or activity. If you build, drive, or move inside this pink zone, Scannerbot can detect you and switch into **Hunt Mode** to track your location. Staying outside the pink zone keeps you safe.
-
-* **How Map Generator Data Works for You:**
-  * **Uploading Your Save File (`.db`):** Shows where Scannerbot **actually is right now** in your world, including whether it is actively hunting you or patrolling normal routes.
-  * **Entering a World Seed:** Shows Scannerbot's default starting patrol route beginning at the **Mechanic Station**.
-
-* **Map Symbols & Lines:**
-  * **Animated Red Line:** Scannerbot's active travel route along the road network.
-  * **Pulsing Radar Beacon:** Scannerbot's exact live position and destination point.
-  * **Translucent Pink Zone:** The 64-meter detection zone where Scannerbot's sensors can spot you.
 - **Resource Deposits & Flora:**
   - **Oil Geysers** (9,923 markers)
   - **Standard Loot Crates** (6,205 markers with custom green compass badge)
@@ -65,6 +48,24 @@ Generate a complete, interactive Scrap Mechanic Chapter 2 world map directly in 
   - **Dynamic Viewer Size Selector:** Switch between **Small**, **Medium**, and **Large** viewport dimensions with persistent layout preference saving.
   - **Spatial Clustering:** Intelligent 8m–24m radius clustering algorithms to eliminate icon clutter while preserving patch locations.
   - **View Frustum Culling:** Real-time viewport clipping so only visible icons are rendered, maintaining smooth 60 FPS scrolling and panning over 28,000+ total markers.
+
+---
+
+## Scannerbot & Threat Zone Guide
+
+**Scannerbot** is the automated security robot that patrols the overworld roads in Scrap Mechanic Chapter 2.
+
+* **What is the 64m Pink Scan Zone?**  
+  Scannerbot continuously sweeps a **64-meter wide radius** along roads for player movement or activity. If you build, drive, or move inside this pink zone, Scannerbot can detect you and switch into **Hunt Mode** to track your location. Staying outside the pink zone keeps you safe.
+
+* **How Map Generator Data Works for You:**  
+  * **Uploading Your Save File (`.db`):** Shows where Scannerbot **actually is right now** in your world, including whether it is actively hunting you or patrolling normal routes.  
+  * **Entering a World Seed:** Shows Scannerbot's default starting patrol route beginning at the **Mechanic Station**.
+
+* **Map Symbols & Lines:**  
+  * **Animated Red Line:** Scannerbot's active travel route along the road network.  
+  * **Pulsing Radar Beacon:** Scannerbot's exact live position and destination point.  
+  * **Translucent Pink Zone:** The 64-meter detection zone where Scannerbot's sensors can spot you.
 
 ---
 
